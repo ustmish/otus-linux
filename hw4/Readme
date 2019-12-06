@@ -1,0 +1,71 @@
+дз 4
+
+1. Вошел в систему без пароля 3 способами. 
+Запускаем виртуальную машину,когда появляется окна выбора ядра нажимаем e. Появляется окно с параметрами загрузки
+
+Способ №1
+
+в окне с параметрами загрузки в конце строки начинающейся с linux16 добавляем init=/bin/sh и удаляем console=ttyS0,115200n8, нажтмаем ctrl+x
+попадаем в систему. монтируем файловую систему в режим Read/Write с помощью команды 
+mount -o remount,rw /
+
+проверяем можем ли создать файл/записать в существующий
+
+Способ №2
+
+в окне с параметрами загрузки в конце строки начинающейся с linux16 добавляем rd.break и удаляем console=ttyS0,115200n8, нажтмаем ctrl+x.
+Попадаем в emergency mode. 
+монтируем файловую систему в режим Read/Write с помощью команды
+mount -o remount,rw /sysroot
+
+Меняем корневой каталог 
+chroot /sysroot
+
+меняем пароль root
+passwd root
+создаем пустой файл с именем .autorelabel
+touch /.autorelabel
+
+перезагружаемся и заходим систему с новым паролем
+
+Способ №3
+
+в окне с параметрами загрузки в строке начинающейся с linux16 заменяем ro на rw init=/sysroot/bin/sh и нажимаем сtrl-x
+файловая система сразу смонтирована в режим Read-Write
+
+
+2. Установить систему с LVM. 
+
+Переименовываем группу VolGroup00 -> OtusRoot
+vgrename VolGroup00 OtusRoot
+
+Редактируем /etc/fstab, /etc/default/grub, /boot/grub2/grub.cfg (заменяем VolGroup00 -> OtusRoot)
+
+Пересоздаем initrd image
+mkinitrd -f -v /boot/initramfs-$(uname -r).img $(uname -r)
+
+проверяем командой vgs
+
+
+3. Добавляем свой модуль в initrd. 
+
+Добавляем модуль
+
+mkdir /usr/lib/dracut/modules.d/01test
+
+копируем скрипты module-setup.sh и module-setup.sh в /usr/lib/dracut/modules.d/01test
+
+Пересобираем образ initrd
+mkinitrd -f -v /boot/initramfs-$(uname -r).img $(uname -r)
+
+проверяем какие модули загружены в образ:
+lsinitrd -m /boot/initramfs-$(uname -r).img | grep test
+
+редактируем grub.cfg: 
+удаляем в строке начинающейся с linux16 опции rghb и quiet, перезагружаемся
+
+при загрузке видим пингвина!
+
+
+
+
